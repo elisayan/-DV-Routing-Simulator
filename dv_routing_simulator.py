@@ -4,9 +4,9 @@ import time
 class Node:
     def __init__(self, node_id):
         self.node_id = node_id
-        self.routing_table = {}  # tabella di routing {nodo_destinazione: (costo, next_hop)}
-        self.neighbors = {}  # nodi vicini {nodo_vicino: costo}
-        self.lock = threading.Lock()  # Lock per sincronizzazione
+        self.routing_table = {node_id: (0, None)}  # Costo 0 verso sé stesso
+        self.neighbors = {}
+        self.lock = threading.Lock()
 
     def add_neighbor(self, neighbor_id, cost):
         with self.lock:
@@ -17,13 +17,16 @@ class Node:
         updated = False
         with self.lock:
             for neighbor_id in self.neighbors:
-                neighbor = network.nodes[neighbor_id]  # Ottieni il nodo vicino
+                neighbor = network.nodes[neighbor_id]
                 for destination, (cost, next_hop) in neighbor.routing_table.items():
+                    if destination == self.node_id:  # Ignora sé stesso
+                        continue
                     new_cost = self.neighbors[neighbor_id] + cost
                     if destination not in self.routing_table or new_cost < self.routing_table[destination][0]:
                         self.routing_table[destination] = (new_cost, neighbor_id)
                         updated = True
         return updated
+
 
     def print_routing_table(self):
         with self.lock:
