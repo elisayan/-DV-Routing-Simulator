@@ -1,65 +1,91 @@
-graph = {
-    'A': {'B': 1, 'C': 5},
-    'B': {'A': 1, 'C': 2, 'D': 4},
-    'C': {'A': 5, 'B': 2, 'D': 1},
-    'D': {'B': 4, 'C': 1}
-}
+import threading
+import time
 
-routing_table = {
-    'A': {
-        'A': (0, None),
-        'B': (1, 'B'),
-        'C': (5, 'C'),
-        'D': (float('inf'), None)},
-    'B': {
-        'A': (1, 'A'),
-        'B': (0, None),
-        'C': (2, 'C'),
-        'D': (4, 'D')},
-    'C': {
-        'A': (5, 'A'),
-        'B': (2, 'B'),
-        'C': (0, None),
-        'D': (1, 'D')},
-    'D': {
-        'A': (float('inf'), None),
-        'B': (4, 'B'),
-        'C': (1, 'C'),
-        'D': (0, None)}
-}
+class Node:
+    def __init__(self, node_id):
+        self.node_id = node_id
+        self.routing_table = {}  # tabella di routing {nodo_destinazione: (costo, next_hop)}
+        self.neighbors = {}  # nodi vicini {nodo_vicino: costo}
+        self.lock = threading.Lock()  # Lock per sincronizzazione
 
-def update_routing_table(node, neighbors, routing_table):
-    updated = False
-    for neighbor, cost in neighbors.items():
-        for dest, (neighbor_cost, next_hop) in routing_table[neighbor].items():
-            new_cost = cost + neighbor_cost
-            if dest not in routing_table[node] or new_cost < routing_table[node][dest][0]:
-                routing_table[node][dest] = (new_cost, neighbor)
-                updated = True
-    return updated
+    def add_neighbor(self, neighbor_id, cost):
+        with self.lock:
+            self.neighbors[neighbor_id] = cost
+            self.routing_table[neighbor_id] = (cost, neighbor_id)
 
-def simulate_routing(graph):
-    routing_table = {node: {n: (cost, n) for n, cost in neighbors.items()} for node, neighbors in graph.items()}
-    for node in graph:
-        for dest in graph:
-            if dest not in routing_table[node]:
-                routing_table[node][dest] = (float('inf'), None)
+    def update_routing_table(self, network):
+        updated = False
+        with self.lock:
+            for neighbor_id in self.neighbors:
+                neighbor = network.nodes[neighbor_id]  # Ottieni il nodo vicino
+                for destination, (cost, next_hop) in neighbor.routing_table.items():
+                    new_cost = self.neighbors[neighbor_id] + cost
+                    if destination not in self.routing_table or new_cost < self.routing_table[destination][0]:
+                        self.routing_table[destination] = (new_cost, neighbor_id)
+                        updated = True
+        return updated
 
-    converged = False
-    while not converged:
-        converged = True
-        for node, neighbors in graph.items():
-            if update_routing_table(node, neighbors, routing_table):
-                converged = False
-
-    return routing_table
-
-def print_routing_tables(routing_table):
-    for node, table in routing_table.items():
-        print(f"Routing table from {node}:")
-        for dest, (cost, next_hop) in table.items():
-            print(f"  To {dest}: Cost = {cost}, Next = {next_hop}")
+    def print_routing_table(self):
+        with self.lock:
+            print(f"Routing table for Node {self.node_id}:")
+            for destination, (cost, next_hop) in self.routing_table.items():
+                print(f"  Destination: {destination}, Cost: {cost}, Next Hop: {next_hop}")
+            print()
 
 
+class Network:
+    def __init__(self):
+        self.nodes = {}
+
+    def add_node(self, node_id):
+        self.nodes[node_id] = Node(node_id)
+
+    def add_link(self, node_id1, node_id2, cost):
+        self.nodes[node_id1].add_neighbor(node_id2, cost)
+        self.nodes[node_id2].add_neighbor(node_id1, cost)
+
+    def simulate_routing(self, max_iterations=10):
+        def update_node(node):
+            for _ in range(max_iterations):
+                updated = node.update_routing_table(self)
+                if not updated:
+                    break
+                time.sleep(0.1)  # Simula un ritardo nella rete
+
+        threads = []
+        for node in self.nodes.values():
+            thread = threading.Thread(target=update_node, args=(node,))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()  # Attende la fine di tutti i thread
+
+    def print_routing_tables(self):
+        for node in self.nodes.values():
+            node.print_routing_table()
+
+
+# Esempio di utilizzo
 if __name__ == "__main__":
-    print_routing_tables(routing_table)
+    # Creare una rete
+    network = Network()
+
+    # Aggiungere nodi
+    network.add_node('A')
+    network.add_node('B')
+    network.add_node('C')
+    network.add_node('D')
+
+    # Aggiungere collegamenti tra nodi
+    network.add_link('A', 'B', 1)
+    network.add_link('A', 'C', 4)
+    network.add_link('B', 'C', 2)
+    network.add_link('B', 'D', 5)
+    network.add_link('C', 'D', 1)
+
+    # Simulare il routing
+    network.simulate_routing()
+
+    # Stampare le tabelle di routing
+    network.print_routing_tables()
