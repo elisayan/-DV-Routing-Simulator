@@ -4,7 +4,7 @@ import time
 class Node:
     def __init__(self, node_id):
         self.node_id = node_id
-        self.routing_table = {node_id: (0, None)}  # Costo 0 verso sé stesso
+        self.routing_table = {node_id: (0, None)}
         self.neighbors = {}
         self.lock = threading.Lock()
 
@@ -19,7 +19,7 @@ class Node:
             for neighbor_id in self.neighbors:
                 neighbor = network.nodes[neighbor_id]
                 for destination, (cost, next_hop) in neighbor.routing_table.items():
-                    if destination == self.node_id:  # Ignora sé stesso
+                    if destination == self.node_id:
                         continue
                     new_cost = self.neighbors[neighbor_id] + cost
                     if destination not in self.routing_table or new_cost < self.routing_table[destination][0]:
@@ -53,7 +53,7 @@ class Network:
                 updated = node.update_routing_table(self)
                 if not updated:
                     break
-                time.sleep(0.1)  # Simula un ritardo nella rete
+                time.sleep(0.1)
 
         threads = []
         for node in self.nodes.values():
@@ -62,33 +62,27 @@ class Network:
             thread.start()
 
         for thread in threads:
-            thread.join()  # Attende la fine di tutti i thread
+            thread.join()
 
     def print_routing_tables(self):
         for node in self.nodes.values():
             node.print_routing_table()
 
 
-# Esempio di utilizzo
 if __name__ == "__main__":
-    # Creare una rete
     network = Network()
 
-    # Aggiungere nodi
     network.add_node('A')
     network.add_node('B')
     network.add_node('C')
     network.add_node('D')
-
-    # Aggiungere collegamenti tra nodi
+    
     network.add_link('A', 'B', 1)
     network.add_link('A', 'C', 4)
     network.add_link('B', 'C', 2)
     network.add_link('B', 'D', 5)
     network.add_link('C', 'D', 1)
 
-    # Simulare il routing
     network.simulate_routing()
 
-    # Stampare le tabelle di routing
     network.print_routing_tables()
