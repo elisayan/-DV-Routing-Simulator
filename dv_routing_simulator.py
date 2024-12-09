@@ -27,13 +27,14 @@ class Node:
                         updated = True
         return updated
 
-
     def print_routing_table(self):
         with self.lock:
-            print(f"Routing table for Node {self.node_id}:")
-            for destination, (cost, next_hop) in self.routing_table.items():
-                print(f"  Destination: {destination}, Cost: {cost}, Next Hop: {next_hop}")
+            print(f"Node {self.node_id}:")
+            for destination, (cost, next_hop) in sorted(self.routing_table.items()):
+                next_hop_str = next_hop if next_hop else "None"
+                print(f"  - Destination: {destination} (Cost: {cost}), Next Hop: {next_hop_str}")
             print()
+
 
 
 class Network:
@@ -61,7 +62,7 @@ class Network:
             threads.append(thread)
             thread.start()
 
-        for thread in threads:
+        for thread in threads: 
             thread.join()
 
     def print_routing_tables(self):
