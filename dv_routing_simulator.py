@@ -1,14 +1,17 @@
 class Node:
     def __init__(self, node_id):
+        # Initialize a node with its ID and an empty routing table
         self.node_id = node_id
         self.routing_table = {node_id: (0, None)}
         self.neighbors = {}
 
-    def add_neighbor(self, neighbor_id, cost):
+    def add_neighbor(self, neighbor_id, cost):    
+        # Add a neighbor to this node with the associated cost
         self.neighbors[neighbor_id] = cost
         self.routing_table[neighbor_id] = (cost, neighbor_id)
 
     def update_routing_table(self, network):
+        # Update the routing table based on neighbors' information
         updated = False
         for neighbor_id in self.neighbors:
             neighbor = network.nodes[neighbor_id]
@@ -37,10 +40,12 @@ class Network:
         self.nodes[node_id] = Node(node_id)
 
     def add_link(self, node_id1, node_id2, cost):
+        # Create a bidirectional link between two nodes with a specified cost
         self.nodes[node_id1].add_neighbor(node_id2, cost)
         self.nodes[node_id2].add_neighbor(node_id1, cost)
 
     def simulate_routing(self, max_iterations=10):
+        # Simulate the routing process for a set number of iterations
         for iteration in range(max_iterations):
             print(f"\n --- Iteration {iteration + 1} ---")
             updated_any = False
