@@ -9,6 +9,11 @@ class Node:
         # Add a neighbor to this node with the associated cost
         self.neighbors[neighbor_id] = cost
         self.routing_table[neighbor_id] = (cost, neighbor_id)
+        
+    def initialize_routing_table(self, all_node_ids):
+        for node_id in all_node_ids:
+            if node_id != self.node_id:
+                self.routing_table[node_id] = (float('inf'), None)
 
     def update_routing_table(self, network):
         # Update the routing table based on neighbors' information
@@ -78,10 +83,33 @@ if __name__ == "__main__":
     network.add_node('C')
     network.add_node('D')
     
+    all_node_ids = list(network.nodes.keys())
+    for node in network.nodes.values():
+        node.initialize_routing_table(all_node_ids)
+        
+    print("Initial Routing Tables:")
+    network.print_routing_tables()
+        
+    print("Adding links and updating routing tables:")
+    
     network.add_link('A', 'B', 3)
+    print("Connected A <-> B:")
+    network.print_routing_tables()
+    
     network.add_link('A', 'C', 1)
+    print("Connected A <-> C:")
+    network.print_routing_tables()
+    
     network.add_link('B', 'C', 2)
+    print("Connected B <-> C:")
+    network.print_routing_tables()
+    
     network.add_link('B', 'D', 4)
+    print("Connected B <-> D:")
+    network.print_routing_tables()
+    
     network.add_link('C', 'D', 5)
+    print("Connected C <-> D:")
+    network.print_routing_tables()
 
     network.simulate_routing()
